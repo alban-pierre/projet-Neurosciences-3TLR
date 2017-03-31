@@ -18,54 +18,18 @@ patterns = (np.random.rand(nbr_patterns, N) < f).astype(int)
 learn_rate = 0.01
 eps = 1.2 #robustness
 
-#Hamming distance
-hamming_distance = lambda x, y: float(abs(x-y).sum())/x.size
-
 #Initiliaze Neural Network
 NN = network.Network(N, theta, f, gamma)
 
 #Learn patterns
-time1 = time.time()
-for i_pattern in range(patterns.shape[0]):
-	NN.Three_TLR(patterns[i_pattern], learn_rate, eps, nb_iter=learning_length)
-print "The training of the neural network took {} seconds.".format(time.time() - time1)
+NN.Three_TLR_training(patterns, learn_rate, eps, nb_iter=learning_length, repeat_sequence=1, shuffle=False)
 
 #Test storage capacity as a function of basin size
 test_length = 100
 b = 0.1 #basin size
-#successful_storage=np.zeros(patterns.shape[0]) #successful storage at basin size for the various patterns
-err=np.zeros(patterns.shape[0]) #successful storage at basin size for the various patterns
-successful_storage_rate=0.9
-
-time2 = time.time()
-for i_pattern in range(patterns.shape[0]):
-	#err=0
-	for i in range(test_length):
-		pat = np.copy(patterns[i_pattern])
-		random_part = range(N)
-		random.shuffle(random_part)
-		random_part = random_part[:int(round(N*b))]
-		pat[random_part] = (np.random.rand(int(round(N*b))) < f).astype(int)
-		NN.s = pat
-		NN.update_states(np.zeros(N), nb_iter=30)
-		d = hamming_distance(patterns[i_pattern], NN.s)
-		err[i_pattern] = err[i_pattern] + int((d > 0.01))
-	err[i_pattern] = err[i_pattern]/test_length
-successful_storage=(1-err>successful_storage_rate).astype(int)
-print "The testing of the neural network took {} seconds.".format(time.time() - time2)
-
-print "The percentage of recovery is {}%.".format(100-err.mean()*100)
-print "The percentage of patterns successfully stored is {}%.".format(100*successful_storage.mean())
-
+NN.testing(patterns, b=0.1, test_length=100)
 
 
 #Plot the hamming distance to patterns accross updates, without any excitations
-#NN.s = (np.random.random(NN.N) < NN.f).astype(int)
-i_pattern = 2
-pat = np.copy(patterns[i_pattern])
-random_part = range(N)
-random.shuffle(random_part)
-random_part = random_part[:int(round(N*b))]
-pat[random_part] = (np.random.rand(int(round(N*b))) < f).astype(int)
-NN.s = pat
-NN.plot_convergence_to_patterns(patterns)
+NN.s = NN.add_noise_to_pattern(patterns[2])
+NN.plot_convergence_to_patterns(patterns, nb_iter=10)

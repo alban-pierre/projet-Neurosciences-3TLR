@@ -2,16 +2,18 @@ import numpy as np
 from scipy.special import erfcinv
 import matplotlib.pyplot as plt
 import math
+import time
+import random
 
 class Network:
 
-    #Initialize network and define binary neural network attributes for the 3TLR 
+	#Initialize network and define binary neural network attributes for the 3TLR 
 	def __init__(self, N=1001, theta=350, f=0.5, gamma=6, initial_mean=1, initial_variance=1): 
 		self.N = N #Number of neurons in the network (binary Mac Culloch Pitts model)
 		self.theta = float(theta) #Threshold in the step function to output post synaptic activity
 		self.f = float(f) #Sparsity of the network (i.e percentage of active neurons)
 		self.gamma = float(gamma) #Measures the strength of the external input to separate ON and OFF neurons in the first stage of the learning
-	#Weight matrix - initialized as Gaussian with 1 mean and 1 variance, 0 diagonal weights (no self-connection), then floored to zero (positive weights to respect Dale's principle)
+		#Weight matrix - initialized as Gaussian with 1 mean and 1 variance, 0 diagonal weights (no self-connection), then floored to zero (positive weights to respect Dale's principle)
 		self.W = initial_variance*np.random.randn(self.N, self.N) + initial_mean 
 		np.fill_diagonal(self.W, 0)
 		self.W = np.maximum(self.W, 0)
@@ -37,12 +39,13 @@ class Network:
 
 			
 	def Three_TLR(self, pattern, learn_rate, eps, nb_iter=100): #learning pattern
-		self.s = (np.random.random(self.N) < self.f).astype(int) #State of the network - initialized as random {0,1} states with f sparseness
+		#self.s = (np.random.random(self.N) < self.f).astype(int) #State of the network - initialized as random {0,1} states with f sparseness
 		self.update_states(pattern) #update states to set the network into the presented pattern
-	 #Define learning thresholds
+		#Define learning thresholds
+		#print "Hamming distance to pattern : {}".format(self.hamming_distance(pattern))
 		theta0 = self.theta - (self.gamma + eps)*self.f*math.sqrt(self.N)
 		theta1 = self.theta + (self.gamma + eps)*self.f*math.sqrt(self.N)
-	 #Update weights
+		#Update weights
 		for k in range(nb_iter):	
 			coeffs = - (self.v < self.theta).astype(int) + (self.v <= theta0).astype(int) + (self.v > self.theta).astype(int) - (self.v >= theta1).astype(int)
 			self.W = self.W + learn_rate*np.dot(np.reshape(coeffs,(coeffs.size,1)),np.reshape(self.s,(1,self.s.size)))
@@ -51,12 +54,48 @@ class Network:
 			self.update_states(pattern)
 
 			
+	def Three_TLR_training(self, patterns, learn_rate, eps, nb_iter=100, repeat_sequence=1, shuffle=False):
+		time1 = time.time()
+		for i_seq in range(repeat_sequence):
+			r = range(patterns.shape[0])
+			if shuffle:
+				random.shuffle(r)
+			for i_pattern in r:
+				self.Three_TLR(patterns[i_pattern], learn_rate, eps, nb_iter=nb_iter)
+		print "The training of the neural network took {} seconds.".format(time.time() - time1)
+
+		
+	def testing(self, patterns, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):
+		time2 = time.time()
+		err=np.zeros(patterns.shape[0]) #successful storage at basin size for the various patterns
+		for i_pattern in range(patterns.shape[0]):
+			for i in range(test_length):
+				self.s = self.add_noise_to_pattern(patterns[i_pattern])
+				self.update_states(np.zeros(self.N), nb_iter=test_nb_iter)
+				d = self.hamming_distance(patterns[i_pattern])
+				err[i_pattern] = err[i_pattern] + int((d > ham_dist_threshold))
+			err[i_pattern] = err[i_pattern]/test_length
+		successful_storage=(1-err>successful_storage_rate).astype(int)
+		print "The testing of the neural network took {} seconds.".format(time.time() - time2)
+		print "The percentage of recovery is {}%.".format(100-err.mean()*100)
+		print "The percentage of patterns successfully stored is {}%.".format(100*successful_storage.mean())
+		return err
+
+
+	def add_noise_to_pattern(self, pattern, b=0.1):
+		pat = np.copy(pattern)
+		random_part = range(self.N)
+		random.shuffle(random_part)
+		random_part = random_part[:int(round(self.N*b))]
+		pat[random_part] = (np.random.rand(int(round(self.N*b))) < self.f).astype(int)
+		return pat
+		
 	def hamming_distance(self, patterns): #hamming distance from patterns to the current state
 		if (len(patterns.shape) == 1):
 			return float(abs(patterns-self.s).sum())/self.N
 		else:
 			return abs(patterns-self.s).sum(axis=1).astype(float)/self.N
-
+		
 		
 	def plot_convergence_to_patterns(self, patterns, nb_iter=10):
 		d = np.zeros((nb_iter, patterns.shape[0]))
