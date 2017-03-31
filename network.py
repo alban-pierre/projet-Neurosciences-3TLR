@@ -8,7 +8,7 @@ import random
 class Network:
 
 	#Initialize network and define binary neural network attributes for the 3TLR 
-	def __init__(self, N=1001, theta=350, f=0.5, gamma=6, initial_mean=1, initial_variance=1): 
+	def __init__(self, N=1001, theta=350, f=0.5, gamma=6, initial_mean=1, initial_variance=1):
 		self.N = N #Number of neurons in the network (binary Mac Culloch Pitts model)
 		self.theta = float(theta) #Threshold in the step function to output post synaptic activity
 		self.f = float(f) #Sparsity of the network (i.e percentage of active neurons)
@@ -26,6 +26,7 @@ class Network:
 		self.H1 = 0					       
 		self.inhibition= self.H0 + self.lmbda*(self.s.sum() - self.f*self.N)
 		self.v = np.dot(self.W,self.s)-self.inhibition
+		self.options_used = {'N':self.N, 'theta':self.theta, 'f':self.f, 'gamma':self.gamma, 'initial_mean':initial_mean, 'initial_variance':initial_variance}
 
 		
 	def update_states(self, external_input, nb_iter=1): #update neurons states
@@ -48,13 +49,14 @@ class Network:
 		#Update weights
 		for k in range(nb_iter):	
 			coeffs = - (self.v < self.theta).astype(int) + (self.v <= theta0).astype(int) + (self.v > self.theta).astype(int) - (self.v >= theta1).astype(int)
+			#print "{}   :	 {}   /	  {}   ---   {}	  vs   {}".format(abs(coeffs).sum(), coeffs.sum(), self.hamming_distance(pattern), abs(np.dot(np.reshape(coeffs,(coeffs.size,1)),np.reshape(self.s,(1,self.s.size)))).sum(), (np.dot(np.reshape(coeffs,(coeffs.size,1)),np.reshape(self.s,(1,self.s.size)))).sum())
 			self.W = self.W + learn_rate*np.dot(np.reshape(coeffs,(coeffs.size,1)),np.reshape(self.s,(1,self.s.size)))
 			np.fill_diagonal(self.W, 0)
 			self.W = np.maximum(self.W, 0)
 			self.update_states(pattern)
 
 			
-	def Three_TLR_training(self, patterns, learn_rate, eps, nb_iter=100, repeat_sequence=1, shuffle=False):
+	def Three_TLR_training(self, patterns, learn_rate, eps, nb_iter=100, repeat_sequence=1, shuffle=True):
 		time1 = time.time()
 		for i_seq in range(repeat_sequence):
 			r = range(patterns.shape[0])
@@ -63,22 +65,29 @@ class Network:
 			for i_pattern in r:
 				self.Three_TLR(patterns[i_pattern], learn_rate, eps, nb_iter=nb_iter)
 		print "The training of the neural network took {} seconds.".format(time.time() - time1)
+		self.options_used.update({'learn_rate':learn_rate, 'eps':eps, 'nb_iter':nb_iter, 'reapeat_sequence':repeat_sequence, 'shuffle':shuffle})
 
 		
 	def testing(self, patterns, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):
 		time2 = time.time()
 		err=np.zeros(patterns.shape[0]) #successful storage at basin size for the various patterns
+		all_d=np.zeros(patterns.shape[0]) #successful storage at basin size for the various patterns
 		for i_pattern in range(patterns.shape[0]):
 			for i in range(test_length):
 				self.s = self.add_noise_to_pattern(patterns[i_pattern])
 				self.update_states(np.zeros(self.N), nb_iter=test_nb_iter)
 				d = self.hamming_distance(patterns[i_pattern])
 				err[i_pattern] = err[i_pattern] + int((d > ham_dist_threshold))
+				all_d[i_pattern] = all_d[i_pattern] + d
 			err[i_pattern] = err[i_pattern]/test_length
+			all_d[i_pattern] = all_d[i_pattern]/test_length
 		successful_storage=(1-err>successful_storage_rate).astype(int)
 		print "The testing of the neural network took {} seconds.".format(time.time() - time2)
+		print "The average hamming distance between patterns and neurons states is {}.".format(all_d.mean())
 		print "The percentage of recovery is {}%.".format(100-err.mean()*100)
 		print "The percentage of patterns successfully stored is {}%.".format(100*successful_storage.mean())
+		self.options_used.update({'b':b, 'test_length':test_length, 'successful_storage_rate':successful_storage_rate, 'test_nb_iter':test_nb_iter, 'ham_dist_threshold':ham_dist_threshold})
+		self.options_used.update({'err':100-err.mean()*100, 'successful_storage':100*successful_storage.mean(), 'avg_dist':all_d.mean(), 'id':int(time.time())})
 		return err
 
 

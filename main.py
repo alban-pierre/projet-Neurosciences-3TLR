@@ -1,16 +1,19 @@
 import numpy as np
 import random
 import network
+import data_manager
 import time
 
 #Define Neural Network parameters
 N = 1001
 theta = 350
 f = 0.5
-gamma = 6
+gamma = 12
 
 #Define Patterns to be learnt
-learning_length=30
+learning_length = 50
+repeat_sequence = 1
+shuffle = False
 nbr_patterns = 5
 patterns = (np.random.rand(nbr_patterns, N) < f).astype(int)
 
@@ -18,18 +21,28 @@ patterns = (np.random.rand(nbr_patterns, N) < f).astype(int)
 learn_rate = 0.01
 eps = 1.2 #robustness
 
-#Initiliaze Neural Network
-NN = network.Network(N, theta, f, gamma)
+results = data_manager.Data_manager('results.txt')
+NN = 1
 
-#Learn patterns
-NN.Three_TLR_training(patterns, learn_rate, eps, nb_iter=learning_length, repeat_sequence=1, shuffle=False)
-
-#Test storage capacity as a function of basin size
-test_length = 100
-b = 0.1 #basin size
-NN.testing(patterns, b=0.1, test_length=100)
+for eps in [0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1., 2., 5., 10.]:
+	#Initiliaze Neural Network
+	del NN
+	NN = network.Network(N, theta, f, gamma)
+	
+	#Learn patterns
+	NN.Three_TLR_training(patterns, learn_rate, eps, nb_iter=learning_length, repeat_sequence=repeat_sequence, shuffle=shuffle)
+	
+	#Test storage capacity as a function of basin size
+	test_length = 100
+	b = 0.5 #basin size
+	#successful_storage_rate=0.9
+	#test_nb_iter=30
+	#ham_dist_threshold=0.01
+	NN.testing(patterns, b, test_length)
+	
+	results.add_result(NN.options_used)
 
 
 #Plot the hamming distance to patterns accross updates, without any excitations
-NN.s = NN.add_noise_to_pattern(patterns[2])
+NN.s = NN.add_noise_to_pattern(patterns[2], b)
 NN.plot_convergence_to_patterns(patterns, nb_iter=10)
