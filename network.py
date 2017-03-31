@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.special import erfcinv
+import matplotlib.pyplot as plt
 import math
 
 class Network:
@@ -19,21 +20,24 @@ class Network:
 		self.mask = np.ones(self.W.shape, dtype=bool) #mask to compute mean and standard deviation of the weight matrix (ignoring diagonal which are non random since set to 0)
 		np.fill_diagonal(self.mask, 0)
 		self.lmbda = self.W[self.mask].mean()
-		self.H0 = (self.N-1)*(self.f*self.W[self.mask].mean() - self.theta/(self.N-1)) + self.W[self.mask].std()*math.sqrt(2)*erfcinv(2*f)*math.sqrt((self.N-1)*f)
+		self.H0 = (self.N-1)*(self.f*self.W[self.mask].mean() - self.theta/(self.N-1)) + self.W[self.mask].std()*math.sqrt(2)*erfcinv(2*self.f)*math.sqrt((self.N-1)*self.f)
 		self.H1 = 0					       
 		self.inhibition= self.H0 + self.lmbda*(self.s.sum() - self.f*self.N)
 		self.v = np.dot(self.W,self.s)-self.inhibition
+
 		
 	def update_states(self, external_input, nb_iter=1): #update neurons states
 		self.lmbda = self.W[self.mask].mean()
 		self.H0 = (self.N-1)*(self.f*self.W[self.mask].mean() - self.theta/(self.N-1)) + self.W[self.mask].std()*math.sqrt(2)*erfcinv(2*self.f)*math.sqrt((self.N-1)*self.f)
-		self.H1 = self.f*self.gamma*math.sqrt(self.N-1) 
+		self.H1 = self.f*self.gamma*math.sqrt(self.N-1)
 		for k in range(nb_iter):
 			self.inhibition = self.H0 + self.H1*external_input.sum()/(self.f*self.N) + self.lmbda*(self.s.sum() - self.f*self.N)
 			self.v = np.dot(self.W, self.s) + self.gamma*math.sqrt(self.N)*external_input - self.inhibition
 			self.s = self.activation_func(self.v)
 
+			
 	def Three_TLR(self, pattern, learn_rate, eps, nb_iter=100): #learning pattern
+		self.s = (np.random.random(self.N) < self.f).astype(int) #State of the network - initialized as random {0,1} states with f sparseness
 		self.update_states(pattern) #update states to set the network into the presented pattern
 	 #Define learning thresholds
 		theta0 = self.theta - (self.gamma + eps)*self.f*math.sqrt(self.N)
@@ -45,3 +49,24 @@ class Network:
 			np.fill_diagonal(self.W, 0)
 			self.W = np.maximum(self.W, 0)
 			self.update_states(pattern)
+
+			
+	def hamming_distance(self, patterns): #hamming distance from patterns to the current state
+		if (len(patterns.shape) == 1):
+			return float(abs(patterns-self.s).sum())/self.N
+		else:
+			return abs(patterns-self.s).sum(axis=1).astype(float)/self.N
+
+		
+	def plot_convergence_to_patterns(self, patterns, nb_iter=10):
+		d = np.zeros((nb_iter, patterns.shape[0]))
+		d[0] = self.hamming_distance(patterns)
+		for i in range(1,nb_iter):
+			self.update_states(np.zeros(self.N))
+			d[i] = self.hamming_distance(patterns)
+		plt.plot(d)
+		plt.xlabel('Number of updates')
+		plt.ylabel('Hamming distance to patterns')
+		plt.title('Hamming distance to patterns, no excitations')
+		plt.show()
+	
