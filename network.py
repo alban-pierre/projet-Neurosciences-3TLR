@@ -65,7 +65,7 @@ class Network:
 			for i_pattern in r:
 				self.Three_TLR(patterns[i_pattern], learn_rate, eps, nb_iter=nb_iter)
 		print "The training of the neural network took {} seconds.".format(time.time() - time1)
-		self.options_used.update({'learn_rate':learn_rate, 'eps':eps, 'nb_iter':nb_iter, 'reapeat_sequence':repeat_sequence, 'shuffle':shuffle})
+		self.options_used.update({'nbr_patterns':patterns.shape[0], 'learn_rate':learn_rate, 'eps':eps, 'nb_iter':nb_iter, 'reapeat_sequence':repeat_sequence, 'shuffle':shuffle})
 
 		
 	def testing(self, patterns, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):

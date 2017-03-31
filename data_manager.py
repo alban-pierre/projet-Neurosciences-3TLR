@@ -46,4 +46,7 @@ class Data_manager:
 						
 		except:
 			print 'Warning : the file "{}" could not be opened to add data.'.format(filename)
-	
+
+			
+	#def plot_results(self, param, x):
+		
