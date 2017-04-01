@@ -56,7 +56,7 @@ class Network:
 			self.update_states(pattern)
 
 			
-	def Three_TLR_training(self, patterns, learn_rate, eps, nb_iter=100, repeat_sequence=1, shuffle=True):
+	def Three_TLR_training(self, patterns, learn_rate=0.01, eps=1.2, nb_iter=100, repeat_sequence=1, shuffle=True):
 		time1 = time.time()
 		for i_seq in range(repeat_sequence):
 			r = range(patterns.shape[0])
@@ -118,4 +118,9 @@ class Network:
 		plt.ylabel('Hamming distance to patterns')
 		plt.title('Hamming distance to patterns, no excitations')
 		plt.show()
+
 	
+	def set_params(self, patterns, learn_rate=0.01, eps=1.2, nb_iter=100, repeat_sequence=1, shuffle=True, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):
+		self.id_options_results[1].update({'nbr_patterns':patterns.shape[0], 'learn_rate':learn_rate, 'eps':eps, 'nb_iter':nb_iter, 'reapeat_sequence':repeat_sequence, 'shuffle':shuffle})
+		self.id_options_results[1].update({'b':b, 'test_length':test_length, 'successful_storage_rate':successful_storage_rate, 'test_nb_iter':test_nb_iter, 'ham_dist_threshold':ham_dist_threshold})
+		

@@ -50,7 +50,7 @@ class Data_manager:
 			print 'Warning : the file "{}" could not be opened to add data.'.format(filename)
 
 			
-	def plot_results(self, param_x, x, y):
+	def plot_results(self, param_x, x, y, x_log_scale=False, plotargs=[], plotkargs=[]):
 		x_in_all_results = 0
 		param = dict(param_x)
 		plt_x = []
@@ -64,6 +64,15 @@ class Data_manager:
 		if (x_in_all_results > 0):
 			print 'Warning : the key "{}" was not found in {} results.'.format(x, x_in_all_results)
 		plt_x = np.array(sorted(plt_x))
-		plt.plot(plt_x[:,0],plt_x[:,1:])
-		plt.xscale('log')
+		for i_plot in range(1,plt_x.shape[1]):
+			if (len(plotargs) >= i_plot) and (len(plotkargs) >= i_plot):
+				plt.plot(plt_x[:,0], plt_x[:,i_plot], *(plotargs[i_plot-1]), **(plotkargs[i_plot-1]))
+			elif (len(plotargs) >= i_plot):
+				plt.plot(plt_x[:,0], plt_x[:,i_plot], *(plotargs[i_plot-1]))
+			elif (len(plotkargs) >= i_plot):
+				plt.plot(plt_x[:,0], plt_x[:,i_plot], **(plotkargs[i_plot-1]))
+			else:
+				plt.plot(plt_x[:,0], plt_x[:,i_plot])
+		if x_log_scale:
+			plt.xscale('log')
 		plt.show()
