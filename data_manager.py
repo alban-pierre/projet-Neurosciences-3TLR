@@ -1,4 +1,6 @@
 import pickle
+import matplotlib.pyplot as plt
+import numpy as np
 
 class Data_manager:
 
@@ -38,8 +40,8 @@ class Data_manager:
 			with open(filename, 'r') as file_d:
 				depick = pickle.Unpickler(file_d)
 				data = depick.load()
-				id_1 = [r['id'] for r in self.data]
-				id_2 = [r['id'] for r in data]
+				id_1 = [r[0] for r in self.data]
+				id_2 = [r[0] for r in data]
 				for iid in range(len(id_2)):
 					if (id_2[iid] not in id_1):
 						self.data.append(data[iid])
@@ -48,5 +50,20 @@ class Data_manager:
 			print 'Warning : the file "{}" could not be opened to add data.'.format(filename)
 
 			
-	#def plot_results(self, param, x):
-		
+	def plot_results(self, param_x, x, y):
+		x_in_all_results = 0
+		param = dict(param_x)
+		plt_x = []
+		del param[x]
+		for r in self.data:
+			if r[1].has_key(x):
+				if set(param.items()).issubset(r[1].items()):
+					plt_x.append(tuple([r[1][x]] + [r[2][ykey] for ykey in y]))
+			else:
+				x_in_all_results = x_in_all_results + 1
+		if (x_in_all_results > 0):
+			print 'Warning : the key "{}" was not found in {} results.'.format(x, x_in_all_results)
+		plt_x = np.array(sorted(plt_x))
+		plt.plot(plt_x[:,0],plt_x[:,1:])
+		plt.xscale('log')
+		plt.show()

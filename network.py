@@ -26,7 +26,7 @@ class Network:
 		self.H1 = 0					       
 		self.inhibition= self.H0 + self.lmbda*(self.s.sum() - self.f*self.N)
 		self.v = np.dot(self.W,self.s)-self.inhibition
-		self.options_used = {'N':self.N, 'theta':self.theta, 'f':self.f, 'gamma':self.gamma, 'initial_mean':initial_mean, 'initial_variance':initial_variance}
+		self.id_options_results = [0, {'N':self.N, 'theta':self.theta, 'f':self.f, 'gamma':self.gamma, 'initial_mean':initial_mean, 'initial_variance':initial_variance}, {}]
 
 		
 	def update_states(self, external_input, nb_iter=1): #update neurons states
@@ -65,7 +65,7 @@ class Network:
 			for i_pattern in r:
 				self.Three_TLR(patterns[i_pattern], learn_rate, eps, nb_iter=nb_iter)
 		print "The training of the neural network took {} seconds.".format(time.time() - time1)
-		self.options_used.update({'nbr_patterns':patterns.shape[0], 'learn_rate':learn_rate, 'eps':eps, 'nb_iter':nb_iter, 'reapeat_sequence':repeat_sequence, 'shuffle':shuffle})
+		self.id_options_results[1].update({'nbr_patterns':patterns.shape[0], 'learn_rate':learn_rate, 'eps':eps, 'nb_iter':nb_iter, 'reapeat_sequence':repeat_sequence, 'shuffle':shuffle})
 
 		
 	def testing(self, patterns, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):
@@ -86,8 +86,9 @@ class Network:
 		print "The average hamming distance between patterns and neurons states is {}.".format(all_d.mean())
 		print "The percentage of recovery is {}%.".format(100-err.mean()*100)
 		print "The percentage of patterns successfully stored is {}%.".format(100*successful_storage.mean())
-		self.options_used.update({'b':b, 'test_length':test_length, 'successful_storage_rate':successful_storage_rate, 'test_nb_iter':test_nb_iter, 'ham_dist_threshold':ham_dist_threshold})
-		self.options_used.update({'err':100-err.mean()*100, 'successful_storage':100*successful_storage.mean(), 'avg_dist':all_d.mean(), 'id':int(time.time())})
+		self.id_options_results[0] = int(time.time())
+		self.id_options_results[1].update({'b':b, 'test_length':test_length, 'successful_storage_rate':successful_storage_rate, 'test_nb_iter':test_nb_iter, 'ham_dist_threshold':ham_dist_threshold})
+		self.id_options_results[2].update({'err':1-err.mean(), 'successful_storage':successful_storage.mean(), 'avg_dist':all_d.mean()})
 		return err
 
 

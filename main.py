@@ -8,7 +8,7 @@ import time
 N = 1001
 theta = 350
 f = 0.5
-gamma = 12
+gamma = 4
 
 #Define Patterns to be learnt
 learning_length = 50
@@ -40,9 +40,14 @@ for eps in [0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1., 2., 5., 10.]:
 	#ham_dist_threshold=0.01
 	NN.testing(patterns, b, test_length)
 	
-	results.add_result(NN.options_used)
+	results.add_result(tuple(NN.id_options_results))
 
 
 #Plot the hamming distance to patterns accross updates, without any excitations
 NN.s = NN.add_noise_to_pattern(patterns[2], b)
 NN.plot_convergence_to_patterns(patterns, nb_iter=10)
+
+#Plot errors, hamming_distances, etc as a function of eps
+id_options_results = NN.id_options_results[1]
+#id_options_results['eps'] = 1.0 # If we need to change arguments for the plot
+results.plot_results(id_options_results, 'eps', ['err', 'avg_dist'])
