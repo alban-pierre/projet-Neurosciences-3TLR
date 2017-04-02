@@ -50,7 +50,7 @@ class Data_manager:
 			print 'Warning : the file "{}" could not be opened to add data.'.format(filename)
 
 			
-	def plot_results(self, param_x, x, y, plot_points=True, plot_mean=False, plot_std=False, plot_min_max=False, figure=1, x_log_scale=False, pointargs=[], pointkargs=[], meanargs=[], meankargs=[], stdargs=[], stdkargs=[], minmaxargs=[], minmaxkargs=[]):
+	def plot_results(self, param_x, x, y, plot_points=True, plot_mean=False, plot_std=False, plot_minmax=False, figure=1, x_log_scale=False, pointargs=[], pointkargs=[], meanargs=[], meankargs=[], stdargs=[], stdkargs=[], minmaxargs=[], minmaxkargs=[]):
 		x_in_all_results = 0
 		param = dict(param_x)
 		plt_x = []
@@ -91,4 +91,46 @@ class Data_manager:
 					plt.plot(plt_m[:,0], plt_m[:,i_plot], **(meankargs[i_plot-1]))
 				else:
 					plt.plot(plt_m[:,0], plt_m[:,i_plot])
+		if plot_std:
+			plt_ux = sorted(list(set(plt_x[:,0])))
+			plt_p = np.zeros((len(plt_ux), plt_x.shape[1]))
+			plt_m = np.zeros((len(plt_ux), plt_x.shape[1]))
+			for i in range(len(plt_ux)):
+				plt_p[i,:] = plt_x[plt_x[:,0] == plt_ux[i]].mean(axis=0) + plt_x[plt_x[:,0] == plt_ux[i]].std(axis=0)
+				plt_m[i,:] = plt_x[plt_x[:,0] == plt_ux[i]].mean(axis=0) - plt_x[plt_x[:,0] == plt_ux[i]].std(axis=0)
+			for i_plot in range(1,plt_x.shape[1]):
+				if (len(stdargs) >= i_plot) and (len(stdkargs) >= i_plot):
+					plt.plot(plt_p[:,0], plt_p[:,i_plot], *(stdargs[i_plot-1]), **(stdkargs[i_plot-1]))
+					plt.plot(plt_m[:,0], plt_m[:,i_plot], *(stdargs[i_plot-1]), **(stdkargs[i_plot-1]))
+				elif (len(stdargs) >= i_plot):
+					plt.plot(plt_p[:,0], plt_p[:,i_plot], *(stdargs[i_plot-1]))
+					plt.plot(plt_m[:,0], plt_m[:,i_plot], *(stdargs[i_plot-1]))
+				elif (len(stdkargs) >= i_plot):
+					plt.plot(plt_p[:,0], plt_p[:,i_plot], **(stdkargs[i_plot-1]))
+					plt.plot(plt_m[:,0], plt_m[:,i_plot], **(stdkargs[i_plot-1]))
+				else:
+					plt.plot(plt_p[:,0], plt_p[:,i_plot])
+					plt.plot(plt_m[:,0], plt_m[:,i_plot])
+		if plot_minmax:
+			plt_ux = sorted(list(set(plt_x[:,0])))
+			plt_min = np.zeros((len(plt_ux), plt_x.shape[1]))
+			plt_max = np.zeros((len(plt_ux), plt_x.shape[1]))
+			for i in range(len(plt_ux)):
+				plt_min[i,:] = plt_x[plt_x[:,0] == plt_ux[i]].min(axis=0)
+				plt_max[i,:] = plt_x[plt_x[:,0] == plt_ux[i]].max(axis=0)
+			for i_plot in range(1,plt_x.shape[1]):
+				if (len(minmaxargs) >= i_plot) and (len(minmaxkargs) >= i_plot):
+					plt.plot(plt_min[:,0], plt_min[:,i_plot], *(minmaxargs[i_plot-1]), **(minmaxkargs[i_plot-1]))
+					plt.plot(plt_max[:,0], plt_max[:,i_plot], *(minmaxargs[i_plot-1]), **(minmaxkargs[i_plot-1]))
+				elif (len(minmaxargs) >= i_plot):
+					plt.plot(plt_min[:,0], plt_min[:,i_plot], *(minmaxargs[i_plot-1]))
+					plt.plot(plt_max[:,0], plt_max[:,i_plot], *(minmaxargs[i_plot-1]))
+				elif (len(minmaxkargs) >= i_plot):
+					plt.plot(plt_min[:,0], plt_min[:,i_plot], **(minmaxkargs[i_plot-1]))
+					plt.plot(plt_max[:,0], plt_max[:,i_plot], **(minmaxkargs[i_plot-1]))
+				else:
+					plt.plot(plt_min[:,0], plt_min[:,i_plot])
+					plt.plot(plt_max[:,0], plt_max[:,i_plot])
+		plt.xlabel(x)
+		plt.ylabel(' and '.join(y))
 		plt.show(block=False)
