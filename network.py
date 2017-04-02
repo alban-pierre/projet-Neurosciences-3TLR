@@ -29,6 +29,21 @@ class Network:
 		self.id_options_results = [0, {'N':self.N, 'theta':self.theta, 'f':self.f, 'gamma':self.gamma, 'initial_mean':initial_mean, 'initial_variance':initial_variance}, {}]
 
 		
+	def plot_v(self, external_input, eps, figure=1, *v_args, **v_kargs): #plot v repartition
+		lmbda = self.W[self.mask].mean()
+		H0 = (self.N-1)*(self.f*self.W[self.mask].mean() - self.theta/(self.N-1)) + self.W[self.mask].std()*math.sqrt(2)*erfcinv(2*self.f)*math.sqrt((self.N-1)*self.f)
+		H1 = self.f*self.gamma*math.sqrt(self.N-1)
+		inhibition = H0 + H1*external_input.sum()/(self.f*self.N) + lmbda*(self.s.sum() - self.f*self.N)
+		v = np.dot(self.W, self.s) + self.gamma*math.sqrt(self.N)*external_input - inhibition
+		theta0 = self.theta - (self.gamma + eps)*self.f*math.sqrt(self.N)
+		theta1 = self.theta + (self.gamma + eps)*self.f*math.sqrt(self.N)
+		if (v.shape[0] == 1):
+			v = v.transpose()
+		plt.figure(figure)
+		plt.hist(v, bins=100, *v_args, **v_kargs)
+		plt.plot([theta0, self.theta, theta1], [0,0,0], '^', color='magenta', markersize=20)
+		plt.show(block=False)
+		
 	def update_states(self, external_input, nb_iter=1): #update neurons states
 		self.lmbda = self.W[self.mask].mean()
 		self.H0 = (self.N-1)*(self.f*self.W[self.mask].mean() - self.theta/(self.N-1)) + self.W[self.mask].std()*math.sqrt(2)*erfcinv(2*self.f)*math.sqrt((self.N-1)*self.f)
