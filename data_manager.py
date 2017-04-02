@@ -50,7 +50,7 @@ class Data_manager:
 			print 'Warning : the file "{}" could not be opened to add data.'.format(filename)
 
 			
-	def plot_results(self, param_x, x, y, x_log_scale=False, plotargs=[], plotkargs=[]):
+	def plot_results(self, param_x, x, y, plot_points=True, plot_mean=False, plot_std=False, plot_min_max=False, figure=1, x_log_scale=False, pointargs=[], pointkargs=[], meanargs=[], meankargs=[], stdargs=[], stdkargs=[], minmaxargs=[], minmaxkargs=[]):
 		x_in_all_results = 0
 		param = dict(param_x)
 		plt_x = []
@@ -64,15 +64,31 @@ class Data_manager:
 		if (x_in_all_results > 0):
 			print 'Warning : the key "{}" was not found in {} results.'.format(x, x_in_all_results)
 		plt_x = np.array(sorted(plt_x))
-		for i_plot in range(1,plt_x.shape[1]):
-			if (len(plotargs) >= i_plot) and (len(plotkargs) >= i_plot):
-				plt.plot(plt_x[:,0], plt_x[:,i_plot], *(plotargs[i_plot-1]), **(plotkargs[i_plot-1]))
-			elif (len(plotargs) >= i_plot):
-				plt.plot(plt_x[:,0], plt_x[:,i_plot], *(plotargs[i_plot-1]))
-			elif (len(plotkargs) >= i_plot):
-				plt.plot(plt_x[:,0], plt_x[:,i_plot], **(plotkargs[i_plot-1]))
-			else:
-				plt.plot(plt_x[:,0], plt_x[:,i_plot])
+		plt.figure(figure)
 		if x_log_scale:
 			plt.xscale('log')
-		plt.show()
+		if plot_points:
+			for i_plot in range(1,plt_x.shape[1]):
+				if (len(pointargs) >= i_plot) and (len(pointkargs) >= i_plot):
+					plt.plot(plt_x[:,0], plt_x[:,i_plot], *(pointargs[i_plot-1]), **(pointkargs[i_plot-1]))
+				elif (len(pointargs) >= i_plot):
+					plt.plot(plt_x[:,0], plt_x[:,i_plot], *(pointargs[i_plot-1]))
+				elif (len(pointkargs) >= i_plot):
+					plt.plot(plt_x[:,0], plt_x[:,i_plot], **(pointkargs[i_plot-1]))
+				else:
+					plt.plot(plt_x[:,0], plt_x[:,i_plot])
+		if plot_mean:
+			plt_ux = sorted(list(set(plt_x[:,0])))
+			plt_m = np.zeros((len(plt_ux), plt_x.shape[1]))
+			for i in range(len(plt_ux)):
+				plt_m[i,:] = plt_x[plt_x[:,0] == plt_ux[i]].mean(axis=0)
+			for i_plot in range(1,plt_x.shape[1]):
+				if (len(meanargs) >= i_plot) and (len(meankargs) >= i_plot):
+					plt.plot(plt_m[:,0], plt_m[:,i_plot], *(meanargs[i_plot-1]), **(meankargs[i_plot-1]))
+				elif (len(meanargs) >= i_plot):
+					plt.plot(plt_m[:,0], plt_m[:,i_plot], *(meanargs[i_plot-1]))
+				elif (len(meankargs) >= i_plot):
+					plt.plot(plt_m[:,0], plt_m[:,i_plot], **(meankargs[i_plot-1]))
+				else:
+					plt.plot(plt_m[:,0], plt_m[:,i_plot])
+		plt.show(block=False)

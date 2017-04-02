@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 import network
 import data_manager
 import time
@@ -57,4 +58,8 @@ NN.plot_convergence_to_patterns(patterns, nb_iter=10)
 #Plot errors, hamming_distances, etc as a function of eps
 id_options_results = NN.id_options_results[1]
 #id_options_results['eps'] = 1.0 # If we need to change arguments for the plot
-results.plot_results(id_options_results, 'eps', ['err', 'avg_dist'], x_log_scale=True, plotargs=[['ok'], ['or']], plotkargs=[{'markersize':10}, {'markersize':5}])
+results.plot_results(id_options_results, x='eps', y=['err', 'avg_dist'], x_log_scale=True, figure=2, \
+                     plot_points=True, pointargs=[['ok'], ['or']], pointkargs=[{'markersize':5}, {'markersize':3}],
+                     plot_mean=True, meanargs=[['k'], ['r']], meankargs=[{'linewidth':2}, {'linewidth':1}])
+
+plt.show()

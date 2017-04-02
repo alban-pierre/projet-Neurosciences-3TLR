@@ -107,17 +107,18 @@ class Network:
 			return abs(patterns-self.s).sum(axis=1).astype(float)/self.N
 		
 		
-	def plot_convergence_to_patterns(self, patterns, nb_iter=10):
+	def plot_convergence_to_patterns(self, patterns, nb_iter=10, figure=1):
 		d = np.zeros((nb_iter, patterns.shape[0]))
 		d[0] = self.hamming_distance(patterns)
 		for i in range(1,nb_iter):
 			self.update_states(np.zeros(self.N))
 			d[i] = self.hamming_distance(patterns)
+		plt.figure(figure)
 		plt.plot(d)
 		plt.xlabel('Number of updates')
 		plt.ylabel('Hamming distance to patterns')
 		plt.title('Hamming distance to patterns, no excitations')
-		plt.show()
+		plt.show(block=False)
 
 	
 	def set_params(self, patterns, learn_rate=0.01, eps=1.2, nb_iter=100, repeat_sequence=1, shuffle=True, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):
