@@ -29,7 +29,8 @@ class Network:
 		self.id_options_results = [0, {'N':self.N, 'theta':self.theta, 'f':self.f, 'gamma':self.gamma, 'initial_mean':initial_mean, 'initial_variance':initial_variance}, {}]
 
 		
-	def plot_v(self, external_input, eps, figure=1, *v_args, **v_kargs): #plot v repartition
+	def plot_v(self, external_input, eps, figure=1, *v_args, **v_kargs):
+		# Plot v repartition
 		lmbda = self.W[self.mask].mean()
 		H0 = (self.N-1)*(self.f*self.W[self.mask].mean() - self.theta/(self.N-1)) + self.W[self.mask].std()*math.sqrt(2)*erfcinv(2*self.f)*math.sqrt((self.N-1)*self.f)
 		H1 = self.f*self.gamma*math.sqrt(self.N-1)
@@ -40,11 +41,13 @@ class Network:
 		if (v.shape[0] == 1):
 			v = v.transpose()
 		plt.figure(figure)
-		plt.hist(v, bins=100, *v_args, **v_kargs)
+		plt.hist(v, bins=50, *v_args, **v_kargs)
 		plt.plot([theta0, self.theta, theta1], [0,0,0], '^', color='magenta', markersize=20)
+		plt.plot([self.theta + eps*self.f*math.sqrt(self.N), self.theta - eps*self.f*math.sqrt(self.N)], [0,0], '^', color='green', markersize=20)
 		plt.show(block=False)
 		
-	def update_states(self, external_input, nb_iter=1): #update neurons states
+	def update_states(self, external_input, nb_iter=1):
+		# Update neurons states nb_iter times, with no learning
 		self.lmbda = self.W[self.mask].mean()
 		self.H0 = (self.N-1)*(self.f*self.W[self.mask].mean() - self.theta/(self.N-1)) + self.W[self.mask].std()*math.sqrt(2)*erfcinv(2*self.f)*math.sqrt((self.N-1)*self.f)
 		self.H1 = self.f*self.gamma*math.sqrt(self.N-1)
@@ -54,17 +57,15 @@ class Network:
 			self.s = self.activation_func(self.v)
 
 			
-	def Three_TLR(self, pattern, learn_rate, eps, nb_iter=100): #learning pattern
-		#self.s = (np.random.random(self.N) < self.f).astype(int) #State of the network - initialized as random {0,1} states with f sparseness
+	def Three_TLR(self, pattern, learn_rate, eps, nb_iter=100):
+		# Make nb_iter learning updates, following the 3TLR update rule
 		self.update_states(pattern) #update states to set the network into the presented pattern
 		#Define learning thresholds
-		#print "Hamming distance to pattern : {}".format(self.hamming_distance(pattern))
 		theta0 = self.theta - (self.gamma + eps)*self.f*math.sqrt(self.N)
 		theta1 = self.theta + (self.gamma + eps)*self.f*math.sqrt(self.N)
 		#Update weights
 		for k in range(nb_iter):	
 			coeffs = - (self.v < self.theta).astype(int) + (self.v <= theta0).astype(int) + (self.v > self.theta).astype(int) - (self.v >= theta1).astype(int)
-			#print "{}   :	 {}   /	  {}   ---   {}	  vs   {}".format(abs(coeffs).sum(), coeffs.sum(), self.hamming_distance(pattern), abs(np.dot(np.reshape(coeffs,(coeffs.size,1)),np.reshape(self.s,(1,self.s.size)))).sum(), (np.dot(np.reshape(coeffs,(coeffs.size,1)),np.reshape(self.s,(1,self.s.size)))).sum())
 			self.W = self.W + learn_rate*np.dot(np.reshape(coeffs,(coeffs.size,1)),np.reshape(self.s,(1,self.s.size)))
 			np.fill_diagonal(self.W, 0)
 			self.W = np.maximum(self.W, 0)
@@ -72,6 +73,7 @@ class Network:
 
 			
 	def Three_TLR_training(self, patterns, learn_rate=0.01, eps=1.2, nb_iter=100, repeat_sequence=1, shuffle=True):
+		# The 3TLR training, repeating the sequence of patterns 'repeat_sequence' times
 		time1 = time.time()
 		for i_seq in range(repeat_sequence):
 			r = range(patterns.shape[0])
@@ -84,12 +86,13 @@ class Network:
 
 		
 	def testing(self, patterns, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):
+		# Test the network 'test_length' times for each pattern and returns the error
 		time2 = time.time()
 		err=np.zeros(patterns.shape[0]) #successful storage at basin size for the various patterns
 		all_d=np.zeros(patterns.shape[0]) #successful storage at basin size for the various patterns
 		for i_pattern in range(patterns.shape[0]):
 			for i in range(test_length):
-				self.s = self.add_noise_to_pattern(patterns[i_pattern])
+				self.s = self.add_noise_to_pattern(patterns[i_pattern], b=b)
 				self.update_states(np.zeros(self.N), nb_iter=test_nb_iter)
 				d = self.hamming_distance(patterns[i_pattern])
 				err[i_pattern] = err[i_pattern] + int((d > ham_dist_threshold))
@@ -108,6 +111,7 @@ class Network:
 
 
 	def add_noise_to_pattern(self, pattern, b=0.1):
+		# Takes a pattern and randomize b percent of its states
 		pat = np.copy(pattern)
 		random_part = range(self.N)
 		random.shuffle(random_part)
@@ -115,7 +119,8 @@ class Network:
 		pat[random_part] = (np.random.rand(int(round(self.N*b))) < self.f).astype(int)
 		return pat
 		
-	def hamming_distance(self, patterns): #hamming distance from patterns to the current state
+	def hamming_distance(self, patterns):
+		# Hamming distance from patterns to the current state
 		if (len(patterns.shape) == 1):
 			return float(abs(patterns-self.s).sum())/self.N
 		else:
@@ -123,6 +128,7 @@ class Network:
 		
 		
 	def plot_convergence_to_patterns(self, patterns, nb_iter=10, figure=1):
+		# Plot the hamming distance to patterns as a function of updates of states of the neural network
 		d = np.zeros((nb_iter, patterns.shape[0]))
 		d[0] = self.hamming_distance(patterns)
 		for i in range(1,nb_iter):
@@ -137,6 +143,7 @@ class Network:
 
 	
 	def set_params(self, patterns, learn_rate=0.01, eps=1.2, nb_iter=100, repeat_sequence=1, shuffle=True, b=0.1, test_length=100, successful_storage_rate=0.9, test_nb_iter=30, ham_dist_threshold=0.01):
+		# Used by the data manager when no training is done, ie when we only want to plot pre-existing results
 		self.id_options_results[1].update({'nbr_patterns':patterns.shape[0], 'learn_rate':learn_rate, 'eps':eps, 'nb_iter':nb_iter, 'reapeat_sequence':repeat_sequence, 'shuffle':shuffle})
 		self.id_options_results[1].update({'b':b, 'test_length':test_length, 'successful_storage_rate':successful_storage_rate, 'test_nb_iter':test_nb_iter, 'ham_dist_threshold':ham_dist_threshold})
 		
